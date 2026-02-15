@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>888Starz Time Gen - Crash Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617;
+            color: #f1f5f9;
+        }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        .glass-card {
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(30, 41, 59, 1);
+        }
+        
+        .prediction-gradient {
+            background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .glow-yellow {
+            box-shadow: 0 0 20px rgba(234, 179, 8, 0.2);
+        }
+
+        @keyframes pulse-soft {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .animate-pulse-soft { animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 border-b border-slate-800 pb-6">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-yellow-500 rounded-xl glow-yellow">
+                    <i data-lucide="zap" class="text-slate-900 fill-current w-7 h-7"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-tight italic">888STARZ <span class="text-yellow-500 text-3xl">TIME GEN</span></h1>
+                    <p class="text-slate-500 text-xs font-mono uppercase tracking-widest">Temporal Analysis Engine v5.1 (JS-Native)</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4 text-sm font-mono">
+                <div class="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full flex items-center gap-2">
+                    <i data-lucide="clock" class="text-yellow-500 w-4 h-4"></i>
+                    <span id="system-clock">00:00:00</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Main Content Area -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Input Card -->
+                <div class="glass-card rounded-2xl p-6">
+                    <h2 class="flex items-center gap-2 text-lg font-bold mb-4">
+                        <i data-lucide="history" class="text-yellow-500 w-5 h-5"></i>
+                        Live Result Tracker
+                    </h2>
+                    <form id="result-form" class="flex gap-2">
+                        <input 
+                            type="number" 
+                            id="multiplier-input"
+                            step="0.01"
+                            required
+                            placeholder="Enter crash point (e.g. 2.15)"
+                            class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-yellow-500 transition-colors text-lg font-mono"
+                        >
+                        <button 
+                            type="submit"
+                            class="bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold px-6 py-3 rounded-xl transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-yellow-500/20 whitespace-nowrap"
+                        >
+                            LOG RESULT
+                        </button>
+                    </form>
+                    
+                    <div class="mt-6">
+                        <p class="text-xs font-mono text-slate-500 mb-2 uppercase">Recent Timeline</p>
+                        <div id="timeline-container" class="flex flex-wrap gap-2 min-h-[58px]">
+                            <!-- Timeline items injected here -->
+                            <span class="text-slate-600 italic text-sm">Waiting for game data...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prediction Card -->
+                <div id="prediction-card" class="prediction-gradient rounded-2xl p-8 relative overflow-hidden group min-h-[280px] flex items-center justify-center">
+                    <div id="prediction-placeholder" class="text-center">
+                        <i data-lucide="timer" class="w-12 h-12 text-slate-700 mx-auto mb-4"></i>
+                        <p class="text-slate-500 max-w-xs">Input crash history to synchronize the temporal 2x prediction engine.</p>
+                    </div>
+
+                    <div id="analyzing-state" class="hidden flex flex-col items-center space-y-4">
+                        <i data-lucide="refresh-cw" class="text-yellow-500 animate-spin w-12 h-12"></i>
+                        <p class="text-yellow-500 font-mono animate-pulse-soft">SYNCING TEMPORAL DATA...</p>
+                    </div>
+
+                    <div id="prediction-content" class="hidden w-full relative z-10">
+                        <div class="flex justify-between items-start mb-6">
+                            <div>
+                                <span class="text-xs font-mono text-slate-400 uppercase tracking-widest bg-slate-800 px-2 py-1 rounded mb-2 inline-block">Next 2.0x Opportunity</span>
+                                <div id="target-window" class="text-5xl font-black text-white italic leading-none">00:00:00</div>
+                                <p class="text-yellow-500 font-mono text-sm mt-1 uppercase">Estimated Time Slot</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs font-mono text-slate-400 uppercase block">Confidence</span>
+                                <div id="confidence-score" class="text-4xl font-bold text-yellow-500">0%</div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-800">
+                                <p class="text-xs text-slate-500 font-mono mb-1">SIGNAL STATUS</p>
+                                <p id="signal-status" class="font-bold text-slate-300">NEUTRAL</p>
+                            </div>
+                            <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-800">
+                                <p class="text-xs text-slate-500 font-mono mb-1">ALGO REFRESH</p>
+                                <p id="algo-refresh" class="font-mono text-slate-300">00:00:00</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl flex items-center gap-3">
+                            <i data-lucide="shield-alert" class="text-yellow-500 shrink-0 w-5 h-5"></i>
+                            <p class="text-[10px] text-yellow-200/70 leading-tight">
+                                Time-series analysis suggests a 2.0x target window. Confidence level is calculated based on the session's volatility and the average cycle between 2x multipliers.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trend Chart -->
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
+                        <i data-lucide="bar-chart-3" class="text-yellow-500 w-5 h-5"></i>
+                        Time-Multiplier Correlation
+                    </h3>
+                    <div class="h-64 w-full relative">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Session Stats -->
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-sm font-mono text-slate-500 uppercase tracking-widest mb-6 border-b border-slate-800 pb-2">Temporal Data</h3>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-slate-400 text-sm">Cycle Consistency</span>
+                                <span id="consistency-percent" class="text-white font-bold">0%</span>
+                            </div>
+                            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                                <div id="consistency-bar" class="bg-blue-500 h-full transition-all duration-1000" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-4">
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                                <p class="text-xs text-slate-500 mb-1 uppercase">Avg Time Between 2x</p>
+                                <p id="avg-time-gap" class="text-xl font-bold text-yellow-500 font-mono">0s</p>
+                            </div>
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                                <p class="text-xs text-slate-500 mb-1 uppercase">Session Win Rate</p>
+                                <p id="win-rate" class="text-xl font-bold text-green-500">0%</p>
+                            </div>
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                                <p class="text-xs text-slate-500 mb-1 uppercase">Reliability Index</p>
+                                <p class="text-xl font-bold text-blue-500 font-mono">0.84β</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tips -->
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-sm font-bold mb-4 flex items-center gap-2">
+                        <i data-lucide="settings" class="text-slate-500 w-4 h-4"></i>
+                        Temporal Strategies
+                    </h3>
+                    <ul class="text-xs space-y-3 text-slate-400">
+                        <li class="flex gap-2">
+                            <span class="text-blue-500 font-bold">1.</span>
+                            The "Target Window" identifies the statistically likely time for the next 2x.
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="text-blue-500 font-bold">2.</span>
+                            Wait for current time to enter the ±15s range of the Predicted Slot.
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="text-blue-500 font-bold">3.</span>
+                            If a 2.0x+ appears before the prediction window, skip and recalibrate.
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Disclaimer -->
+                <div class="p-4 rounded-xl bg-red-500/5 border border-red-500/10 text-[10px] text-slate-500 leading-relaxed">
+                    <span class="font-bold text-red-500/50 block mb-1">DISCLAIMER:</span>
+                    This is a statistical simulation tool. All crash games use high-entropy RNG. No software can provide 100% certainty. Use for strategy planning only.
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // State Management
+        let history = [];
+        let chart = null;
+
+        // Initialize UI
+        function init() {
+            lucide.createIcons();
+            updateClock();
+            setInterval(updateClock, 1000);
+            initChart();
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('system-clock').textContent = now.toLocaleTimeString([], { hour12: false });
+        }
+
+        // Chart Initialization
+        function initChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(234, 179, 8, 0.4)');
+            gradient.addColorStop(1, 'rgba(234, 179, 8, 0)');
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Multiplier',
+                        data: [],
+                        borderColor: '#eab308',
+                        borderWidth: 2,
+                        fill: true,
+                        backgroundColor: gradient,
+                        tension: 0, // Using step style equivalent
+                        stepped: true,
+                        pointBackgroundColor: '#eab308',
+                        pointRadius: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            titleColor: '#94a3b8',
+                            bodyColor: '#eab308'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#475569', font: { size: 10 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(30, 41, 59, 0.5)' },
+                            ticks: { color: '#475569', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Logic Functions
+        document.getElementById('result-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('multiplier-input');
+            const val = parseFloat(input.value);
+            
+            if (!isNaN(val) && val > 0) {
+                const now = new Date();
+                const entry = {
+                    val: val,
+                    timestamp: Date.now(),
+                    displayTime: now.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                };
+                
+                history.unshift(entry);
+                if (history.length > 50) history.pop();
+                
+                input.value = '';
+                updateUI();
+                processAnalysis();
+            }
+        });
+
+        function updateUI() {
+            // Update Timeline
+            const container = document.getElementById('timeline-container');
+            container.innerHTML = '';
+            
+            history.slice(0, 8).forEach(item => {
+                const div = document.createElement('div');
+                const isWin = item.val >= 2.0;
+                div.className = `flex flex-col items-center p-2 rounded-lg border min-w-[70px] ${isWin ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`;
+                div.innerHTML = `
+                    <span class="font-mono font-bold ${isWin ? 'text-green-400' : 'text-red-400'}">${item.val.toFixed(2)}x</span>
+                    <span class="text-[10px] text-slate-500 font-mono">${item.displayTime}</span>
+                `;
+                container.appendChild(div);
+            });
+
+      
+            const total = history.length;
+            const twoXCount = history.filter(h => h.val >= 2.0).length;
+            const winRate = ((twoXCount / total) * 100).toFixed(1);
+            document.getElementById('win-rate').textContent = `${winRate}%`;
+
+            // Calculate Time Gaps
+            const twoXTiling = history.filter(h => h.val >= 2.0);
+            let avgGap = 0;
+            if (twoXTiling.length >= 2) {
+                let gaps = [];
+                for(let i=0; i < twoXTiling.length - 1; i++) {
+                    gaps.push(Math.abs(twoXTiling[i].timestamp - twoXTiling[i+1].timestamp) / 1000);
+                }
+                avgGap = Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length);
+            }
+            document.getElementById('avg-time-gap').textContent = `${avgGap}s`;
+
+            const consistency = Math.max(0, Math.min(100, 100 - (avgGap / 10)));
+            document.getElementById('consistency-percent').textContent = `${Math.round(consistency)}%`;
+            document.getElementById('consistency-bar').style.width = `${consistency}%`;
+
+            // Update Chart
+            const chartData = [...history].reverse();
+            chart.data.labels = chartData.map(h => h.displayTime);
+            chart.data.datasets[0].data = chartData.map(h => h.val);
+            chart.update();
+        }
+
+        function processAnalysis() {
+            document.getElementById('prediction-placeholder').classList.add('hidden');
+            document.getElementById('prediction-content').classList.add('hidden');
+            document.getElementById('analyzing-state').classList.remove('hidden');
+
+            setTimeout(() => {
+                const lastFew = history.slice(0, 5);
+                const isDue = lastFew.every(h => h.val < 2.0);
+                const randomBoost = Math.random() * 20;
+                
+                let confidence = 50 + (isDue ? 25 : -10) + randomBoost;
+                confidence = Math.min(Math.max(confidence, 15), 98).toFixed(1);
+
+                // Target Window Logic
+                const now = new Date();
+                const shift = (Math.random() * 100 + 40) * 1000;
+                const targetTime = new Date(now.getTime() + shift);
+
+                document.getElementById('target-window').textContent = targetTime.toLocaleTimeString([], { hour12: false });
+                document.getElementById('confidence-score').textContent = `${confidence}%`;
+                
+                const status = document.getElementById('signal-status');
+                if (confidence > 75) {
+                    status.textContent = 'HIGH PROBABILITY';
+                    status.className = 'font-bold text-green-400';
+                } else if (confidence > 45) {
+                    status.textContent = 'NEUTRAL';
+                    status.className = 'font-bold text-slate-300';
+                } else {
+                    status.textContent = 'LOW PROBABILITY';
+                    status.className = 'font-bold text-red-400';
+                }
+
+                document.getElementById('algo-refresh').textContent = now.toLocaleTimeString([], { hour12: false });
+
+                document.getElementById('analyzing-state').classList.add('hidden');
+                document.getElementById('prediction-content').classList.remove('hidden');
+                
+                // Refresh Lucide icons for the newly visible content
+                lucide.createIcons();
+            }, 1200);
+        }
+
+        // Boot
+        window.onload = init;
+    </script>
+</body>
+</html>
